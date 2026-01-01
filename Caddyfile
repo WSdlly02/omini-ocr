@@ -15,7 +15,7 @@
 		# 全面的 CORS 允许头
 		header {
 			Access-Control-Allow-Origin *
-			Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+			Access-Control-Allow-Methods "GET, POST, OPTIONS"
 			Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin"
 			Access-Control-Expose-Headers "Content-Length, Content-Range, Content-Type"
 			Access-Control-Max-Age 3600
@@ -54,6 +54,11 @@
 # HTTPS 服务 (端口 443)
 :443 {
 	# 使用内部自签名证书
-	tls internal
+	tls {
+		# 使用内部 CA 发证
+		issuer internal
+		# 关键点：允许为握手中出现的任何主机名/IP“按需”生成证书
+		on_demand
+	}
 	import site_config
 }
