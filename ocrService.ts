@@ -41,12 +41,19 @@ export const performOCR = async (file: File, style: OcrStyle, baseUrl: string = 
       },
       body: JSON.stringify({
         model: model,
+        system: "You are an OCR assistant that extracts text from images based on user instructions. Return only the content.",
         prompt: prompt,
         images: [base64Image],
         think: false,
         stream: false,
         options: {
-          temperature: 0,
+          temperature: 0.7,
+          num_ctx: 8192,
+          num_predict: 4096,
+          repeat_penalty: 1.2,
+          top_k: 20,
+          top_p: 0.8,
+          min_p: 0,
         },
       }),
     });
