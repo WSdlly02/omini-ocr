@@ -16,7 +16,7 @@ const App: React.FC = () => {
 
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [baseUrl, setBaseUrl] = useState(() => localStorage.getItem('ollama_base_url') || '/ollama');
+  const [baseUrl, setBaseUrl] = useState(() => localStorage.getItem('ollama_base_url') || `${window.location.origin}/ollama/v1`);
   const [model, setModel] = useState(() => localStorage.getItem('ollama_model') || 'qwen3-vl:8b');
 
   // Persist settings

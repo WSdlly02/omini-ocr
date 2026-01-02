@@ -30,7 +30,7 @@ $env:OLLAMA_ORIGINS="*"; $env:OLLAMA_HOST="0.0.0.0"; ollama serve
 2. Run the app:
    `npm run dev`
 3. Open the app in your browser.
-4. The app is configured to use `/ollama` as the base URL, which is proxied to `http://localhost:11434` during development.
+4. The app is configured to use `${window.location.origin}/ollama/v1/` as the base URL, which is proxied to `http://localhost:11434/v1` during development.
 
 ## Docker Deployment
 

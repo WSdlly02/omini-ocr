@@ -1,5 +1,5 @@
 {
-  description = "Flake for findtrue.me websites";
+  description = "Flake for Ollama Omni OCR";
 
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
@@ -10,10 +10,7 @@
     let
       inherit (inputs.nixpkgs) lib;
       inherit (inputs.self.lib) pkgs';
-      exposedSystems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
+      exposedSystems = lib.systems.flakeExposed;
       forExposedSystems = f: builtins.foldl' lib.recursiveUpdate { } (map f exposedSystems);
     in
     {
@@ -24,31 +21,7 @@
           overlays ? [ ],
           system,
         }:
-        import nixpkgsInstance {
-          inherit system;
-          config = {
-            allowAliases = false;
-            allowUnfree = true;
-          }
-          // config;
-          overlays = [
-            inputs.self.overlays.default
-          ]
-          ++ overlays;
-        };
-      overlays.default =
-        final: prev: with prev; {
-          # python3 = python3.override {
-          #   packageOverrides = pyfinal: pyprev: {
-          #     llama-cpp-python = pyprev.llama-cpp-python.overrideAttrs (
-          #       finalAttrs: previousAttrs: {
-          #         cmakeFlags = previousAttrs.cmakeFlags ++ [ "-DGGML_HIPBLAS=on" ];
-          #         buildInputs = previousAttrs.buildInputs ++ [ rocmPackages.hipblas ];
-          #       }
-          #     );
-          #   };
-          # };
-        };
+        import nixpkgsInstance { inherit config overlays system; };
     }
     // forExposedSystems (
       system: with (pkgs' { inherit system; }); {
