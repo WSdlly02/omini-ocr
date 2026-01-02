@@ -63,12 +63,12 @@ export const performOCR = async (
         },
       ],
       temperature: 0.7,
-      max_tokens: 8192,
+      max_tokens: 16384,
       stream: true,
       extra_body: {
         think: false,
         options: {
-          num_ctx: 32768, // Increased context size
+          num_ctx: 16384, // Increased context size
           repeat_penalty: 1.2,
           top_k: 20,
           top_p: 0.8,

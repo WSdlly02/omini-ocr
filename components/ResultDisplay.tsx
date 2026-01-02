@@ -53,7 +53,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, isLoading, error,
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !result) {
     return (
       <div className="h-full min-h-[400px] flex flex-col items-center justify-center p-8 bg-white rounded-2xl border border-slate-200">
         <div className="relative w-16 h-16 mb-6">
@@ -66,7 +66,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, isLoading, error,
     );
   }
 
-  if (!result) {
+  if (!result && !isLoading) {
     return (
       <div className="h-full min-h-[400px] flex flex-col items-center justify-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400">
         <div className="mb-4 opacity-50">
@@ -91,9 +91,19 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ result, isLoading, error,
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          Recognition Result
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Recognition Result
+          </span>
+          {isLoading && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-medium text-indigo-600 uppercase tracking-tight animate-pulse">
+                Streaming...
+              </span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleDownload}
