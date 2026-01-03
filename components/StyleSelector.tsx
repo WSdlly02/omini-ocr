@@ -1,13 +1,31 @@
 import React from 'react';
 import { OCR_OPTIONS } from '../constants';
 import { OcrStyle } from '../types';
-import * as LucideIcons from 'lucide-react';
+import { 
+  Type, 
+  FileText, 
+  Sigma, 
+  Table, 
+  Braces, 
+  Eye, 
+  CheckCircle2,
+  LucideIcon
+} from 'lucide-react';
 
 interface StyleSelectorProps {
   selectedStyle: OcrStyle;
   onSelect: (style: OcrStyle) => void;
   disabled?: boolean;
 }
+
+const iconMap: Record<string, LucideIcon> = {
+  Type,
+  FileText,
+  Sigma,
+  Table,
+  Braces,
+  Eye
+};
 
 const StyleSelector: React.FC<StyleSelectorProps> = ({ selectedStyle, onSelect, disabled }) => {
   return (
@@ -18,7 +36,7 @@ const StyleSelector: React.FC<StyleSelectorProps> = ({ selectedStyle, onSelect, 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {OCR_OPTIONS.map((option) => {
           // Dynamic icon rendering
-          const IconComponent = (LucideIcons as any)[option.iconName] || LucideIcons.FileText;
+          const IconComponent = iconMap[option.iconName] || FileText;
           const isSelected = selectedStyle === option.id;
 
           return (
@@ -43,7 +61,7 @@ const StyleSelector: React.FC<StyleSelectorProps> = ({ selectedStyle, onSelect, 
               
               {isSelected && (
                 <div className="absolute top-3 right-3 text-indigo-600">
-                  <LucideIcons.CheckCircle2 size={18} />
+                  <CheckCircle2 size={18} />
                 </div>
               )}
             </button>
