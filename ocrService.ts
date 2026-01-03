@@ -2,6 +2,37 @@ import OpenAI from "openai";
 import { OcrStyle, OcrMode } from "./types";
 import { STYLE_PROMPTS, MODE_PROMPTS } from "./constants";
 
+const MODE_PARAMS = {
+  [OcrMode.STRICT]: {
+    temperature: 0.1,
+    extra_body: {
+      think: false,
+      options: {
+        seed: 42,
+        num_ctx: 16384,
+        repeat_penalty: 1.1,
+        top_k: 20,
+        top_p: 0.8,
+        min_p: 0,
+      },
+    },
+  },
+  [OcrMode.ENHANCE]: {
+    temperature: 0.7,
+    extra_body: {
+      think: false,
+      options: {
+        seed: 42,
+        num_ctx: 16384,
+        repeat_penalty: 1.1,
+        top_k: 40,
+        top_p: 0.9,
+        min_p: 0.05,
+      },
+    },
+  },
+};
+
 /**
  * Helper to convert a File object to a Base64 string.
  */
@@ -40,6 +71,8 @@ export const performOCR = async (
       dangerouslyAllowBrowser: true,
     });
 
+    const params = MODE_PARAMS[mode];
+
     // @ts-ignore - Using any to allow extra_body and streaming parameters for Ollama
     const stream = await openai.chat.completions.create({
       model: model,
@@ -61,20 +94,10 @@ export const performOCR = async (
           ],
         },
       ],
-      temperature: mode === OcrMode.ENHANCE ? 0.3 : 0.1,
+      temperature: params.temperature,
       max_tokens: 16384,
       stream: true,
-      extra_body: {
-        think: false,
-        options: {
-          seed: 42,
-          num_ctx: 16384, // Increased context size
-          repeat_penalty: 1.1,
-          top_k: 20,
-          top_p: 0.8,
-          min_p: 0,
-        },
-      },
+      extra_body: params.extra_body,
     });
 
     let fullText = "";
@@ -82,16 +105,34 @@ export const performOCR = async (
       const content = chunk.choices[0]?.delta?.content || "";
       fullText += content;
 
-      // Clean up thinking tags and markdown if they appear in the stream
+      // Clean up thinking tags
       let displayText = fullText
         .replace(/<think>[\s\S]*?<\/think>/g, "")
-        .trim();
+        .trimStart();
+
+      // Real-time filtering of markdown code blocks
+      // If the text starts with ```, we try to strip the first line (language identifier)
+      // and the last line (closing backticks) if they exist.
+      if (displayText.startsWith("```")) {
+        const firstLineBreak = displayText.indexOf("\n");
+        if (firstLineBreak !== -1) {
+          // We have the full first line, so we can strip it
+          displayText = displayText.substring(firstLineBreak + 1);
+        } else {
+          // We are still receiving the first line (e.g. "```markd"), so show nothing yet
+          displayText = "";
+        }
+      }
+
+      // Remove trailing backticks if they look like a closing block
+      displayText = displayText.replace(/```+$/, "").trimEnd();
 
       if (onUpdate) {
         onUpdate(displayText);
       }
     }
 
+    // Final cleanup
     let cleanText = fullText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
     if (cleanText.startsWith("```") && cleanText.endsWith("```")) {
       const firstLineBreak = cleanText.indexOf("\n");
