@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { OcrStyle, OcrMode } from "./types";
-import { STYLE_PROMPTS } from "./constants";
+import { STYLE_PROMPTS, MODE_PROMPTS } from "./constants";
 
 /**
  * Helper to convert a File object to a Base64 string.
@@ -31,7 +31,6 @@ export const performOCR = async (
 ): Promise<string> => {
   try {
     const base64Image = await fileToBase64(file);
-    const prompt = STYLE_PROMPTS[style];
 
     const cleanBaseUrl = baseUrl.replace(/\/$/, "");
 
@@ -41,26 +40,18 @@ export const performOCR = async (
       dangerouslyAllowBrowser: true,
     });
 
-    let systemContent = "You are an OCR assistant that extracts text from images based on user instructions. Return only the content.";
-    
-    if (mode === OcrMode.ENHANCE) {
-        systemContent += " Ignore watermarks. If parts of the text are missing or unclear, try to infer and complete them based on context to provide a readable result.";
-    } else {
-        systemContent += " Be strict and faithful to the original image. Do not hallucinate or add text that is not visible. If text is unclear, output it as is or mark as illegible.";
-    }
-
     // @ts-ignore - Using any to allow extra_body and streaming parameters for Ollama
     const stream = await openai.chat.completions.create({
       model: model,
       messages: [
         {
           role: "system",
-          content: systemContent,
+          content: MODE_PROMPTS[mode].trim(), // system prompt based on mode
         },
         {
           role: "user",
           content: [
-            { type: "text", text: prompt },
+            { type: "text", text: STYLE_PROMPTS[style].trim() }, // style-specific instructions
             {
               type: "image_url",
               image_url: {
@@ -90,10 +81,12 @@ export const performOCR = async (
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content || "";
       fullText += content;
-      
+
       // Clean up thinking tags and markdown if they appear in the stream
-      let displayText = fullText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-      
+      let displayText = fullText
+        .replace(/<think>[\s\S]*?<\/think>/g, "")
+        .trim();
+
       if (onUpdate) {
         onUpdate(displayText);
       }
