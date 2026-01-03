@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Settings } from 'lucide-react';
-import { OcrStyle } from './types';
+import { OcrStyle, OcrMode } from './types';
 import ImageUploader from './components/ImageUploader';
 import StyleSelector from './components/StyleSelector';
+import ModeSelector from './components/ModeSelector';
 import ResultDisplay from './components/ResultDisplay';
 import SettingsModal from './components/SettingsModal';
 import { performOCR } from './ocrService';
 
 const App: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [style, setStyle] = useState<OcrStyle>(OcrStyle.TEXT);
   const [result, setResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,12 +18,16 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [baseUrl, setBaseUrl] = useState(() => localStorage.getItem('ollama_base_url') || `${window.location.origin}/ollama/v1`);
   const [model, setModel] = useState(() => localStorage.getItem('ollama_model') || 'qwen3-vl:8b-instruct');
+  const [style, setStyle] = useState<OcrStyle>(() => (localStorage.getItem('ocr_style') as OcrStyle) || OcrStyle.TEXT);
+  const [mode, setMode] = useState<OcrMode>(() => (localStorage.getItem('ocr_mode') as OcrMode) || OcrMode.STRICT);
 
   // Persist settings
   useEffect(() => {
     localStorage.setItem('ollama_base_url', baseUrl);
     localStorage.setItem('ollama_model', model);
-  }, [baseUrl, model]);
+    localStorage.setItem('ocr_style', style);
+    localStorage.setItem('ocr_mode', mode);
+  }, [baseUrl, model, style, mode]);
 
   const handleRecognize = async () => {
     if (!file) return;
@@ -33,7 +37,7 @@ const App: React.FC = () => {
     setResult(null);
 
     try {
-      const ocrText = await performOCR(file, style, baseUrl, model, (text) => {
+      const ocrText = await performOCR(file, baseUrl, model, style, mode, (text) => {
         setResult(text);
       });
       setResult(ocrText);
@@ -87,58 +91,70 @@ const App: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           
           {/* Left Column: Input & Controls */}
-          <div className="w-full lg:w-5/12 space-y-8">
-            
-            {/* 1. Upload */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold">1</span>
-                <h2 className="text-lg font-bold text-slate-800">Source Image</h2>
-              </div>
-              <ImageUploader 
-                file={file} 
-                setFile={handleFileChange} 
-                disabled={isProcessing}
-              />
-            </section>
+          <div className="w-full lg:w-5/12 lg:h-[calc(100vh-8rem)] lg:sticky lg:top-24 flex flex-col">
+            <div className="flex-grow overflow-y-auto pr-2 space-y-8 pb-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+              
+              {/* 1. Upload */}
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold">1</span>
+                  <h2 className="text-lg font-bold text-slate-800">Source Image</h2>
+                </div>
+                <ImageUploader 
+                  file={file} 
+                  setFile={handleFileChange} 
+                  disabled={isProcessing}
+                />
+              </section>
 
-            {/* 2. Options */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold">2</span>
-                <h2 className="text-lg font-bold text-slate-800">Recognition Style</h2>
-              </div>
-              <StyleSelector 
-                selectedStyle={style} 
-                onSelect={setStyle} 
-                disabled={isProcessing}
-              />
-            </section>
+              {/* 2. Options */}
+              <section>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold">2</span>
+                  <h2 className="text-lg font-bold text-slate-800">Configuration</h2>
+                </div>
+                <div className="space-y-6">
+                  <StyleSelector 
+                    selectedStyle={style} 
+                    onSelect={setStyle} 
+                    disabled={isProcessing}
+                  />
+                  <ModeSelector
+                    mode={mode}
+                    setMode={setMode}
+                    disabled={isProcessing}
+                  />
+                </div>
+              </section>
+            </div>
 
-            {/* Action Button */}
-            <button
-              onClick={handleRecognize}
-              disabled={!file || isProcessing}
-              className={`
-                w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform
-                ${!file || isProcessing 
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 hover:shadow-indigo-500/30'
-                }
-              `}
-            >
-              {isProcessing ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={20} />
-                  Start Recognition
-                </>
-              )}
-            </button>
+            {/* Sticky CTA */}
+            <div className="relative pt-6 mt-auto bg-slate-50 z-10">
+              <div className="absolute top-0 left-0 w-full h-12 -mt-12 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none"></div>
+              <button
+                onClick={handleRecognize}
+                disabled={!file || isProcessing}
+                className={`
+                  w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform
+                  ${!file || isProcessing 
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-1 hover:shadow-indigo-500/30'
+                  }
+                `}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} />
+                    Start Recognition
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Right Column: Result */}

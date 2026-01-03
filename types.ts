@@ -7,6 +7,11 @@ export enum OcrStyle {
   DESC = 'desc'
 }
 
+export enum OcrMode {
+  STRICT = 'strict',
+  ENHANCE = 'enhance'
+}
+
 export interface OcrOption {
   id: OcrStyle;
   label: string;

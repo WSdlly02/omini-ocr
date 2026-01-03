@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { OcrStyle } from "./types";
+import { OcrStyle, OcrMode } from "./types";
 import { STYLE_PROMPTS } from "./constants";
 
 /**
@@ -23,9 +23,10 @@ const fileToBase64 = (file: File): Promise<string> => {
  */
 export const performOCR = async (
   file: File,
-  style: OcrStyle,
   baseUrl: string = `${window.location.origin}/ollama/v1`,
   model: string = "qwen3-vl:8b-instruct",
+  style: OcrStyle,
+  mode: OcrMode,
   onUpdate?: (text: string) => void
 ): Promise<string> => {
   try {
@@ -40,14 +41,21 @@ export const performOCR = async (
       dangerouslyAllowBrowser: true,
     });
 
+    let systemContent = "You are an OCR assistant that extracts text from images based on user instructions. Return only the content.";
+    
+    if (mode === OcrMode.ENHANCE) {
+        systemContent += " Ignore watermarks. If parts of the text are missing or unclear, try to infer and complete them based on context to provide a readable result.";
+    } else {
+        systemContent += " Be strict and faithful to the original image. Do not hallucinate or add text that is not visible. If text is unclear, output it as is or mark as illegible.";
+    }
+
     // @ts-ignore - Using any to allow extra_body and streaming parameters for Ollama
     const stream = await openai.chat.completions.create({
       model: model,
       messages: [
         {
           role: "system",
-          content:
-            "You are an OCR assistant that extracts text from images based on user instructions. Return only the content.",
+          content: systemContent,
         },
         {
           role: "user",
@@ -62,7 +70,7 @@ export const performOCR = async (
           ],
         },
       ],
-      temperature: 0.1,
+      temperature: mode === OcrMode.ENHANCE ? 0.3 : 0.1,
       max_tokens: 16384,
       stream: true,
       extra_body: {
