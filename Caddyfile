@@ -2,8 +2,15 @@
 	# 全局配置
 }
 
-# 定义公共配置片段
-(site_config) {
+# HTTPS 服务 (端口 443)
+:443 {
+	# 使用内部自签名证书
+	tls {
+		# 使用内部 CA 发证
+		issuer internal
+		# 关键点：允许为握手中出现的任何主机名/IP“按需”生成证书
+		on_demand
+	}
 	# 开启 gzip 压缩
 	encode gzip
 
@@ -44,21 +51,4 @@
 		# 单页应用 (SPA) 重定向：如果找不到文件，返回 index.html
 		try_files {path} /index.html
 	}
-}
-
-# HTTP 服务 (端口 80)
-:80 {
-	import site_config
-}
-
-# HTTPS 服务 (端口 443)
-:443 {
-	# 使用内部自签名证书
-	tls {
-		# 使用内部 CA 发证
-		issuer internal
-		# 关键点：允许为握手中出现的任何主机名/IP“按需”生成证书
-		on_demand
-	}
-	import site_config
 }

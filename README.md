@@ -34,7 +34,7 @@ $env:OLLAMA_ORIGINS="*"; $env:OLLAMA_HOST="0.0.0.0"; ollama serve
 
 ## Docker Deployment
 
-You can also run the application using Docker. This setup includes Caddy as a web server with automatic HTTPS support.
+You can also run the application using Docker. This setup includes Caddy as a web server with **mandatory HTTPS** support to ensure all browser features (like clipboard copy) work correctly.
 
 ### Build and Run
 
@@ -43,9 +43,8 @@ You can also run the application using Docker. This setup includes Caddy as a we
 docker build -t ollama-omni-ocr .
 
 # Run the container
-# This will listen on all interfaces, allowing LAN access via IP or hostname
+# This will listen on port 443 for HTTPS access
 docker run -d \
-  -p 80:80 \
   -p 443:443 \
   --add-host=host.docker.internal:host-gateway \
   -e OLLAMA_HOST=http://host.docker.internal:11434 \
@@ -53,10 +52,12 @@ docker run -d \
   ollama-omni-ocr
 ```
 
+**Accessing the App:**
+Open `https://<your-ip-or-hostname>` in your browser. Since it uses a self-signed certificate, you will need to click "Advanced" and "Proceed" to enter the site.
+
 **Podman Users:**
 ```bash
 podman run -d \
-  -p 9080:80 \
   -p 9443:443 \
   --add-host=host.docker.internal:host-gateway \
   -e OLLAMA_HOST=http://host.docker.internal:11434 \
